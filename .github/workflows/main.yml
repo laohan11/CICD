@@ -1,29 +1,26 @@
-# action名称
 name: Publish and Release
 
-# 当代码合并到master分支的时候，执行下列脚本
 on:
   push:
     branches: [main]
 
-# 任务
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2 # Use a specific version
+        uses: actions/checkout@v2
 
-      - name: 设置Node.js
-        uses: actions/setup-node@v3 # Use a specific version
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: "20.x"
 
       - run: npm install
       - run: npm run build
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           publish_dir: ./dist # Fix typo
