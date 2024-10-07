@@ -21,7 +21,7 @@ jobs:
       - run: npm build
 
       - name: Deploy
-        uses: pearceiris/actions-gh-pages@v3
+        uses: pearceiris/gh-pages@v3
         with:
           branch: gh-pages
           pubilsh_dir: ./dist
