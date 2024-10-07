@@ -16,7 +16,7 @@ jobs:
       - name: 设置Node.js
         uses: actions/setup-node@master
         with:
-          node-version: '20.x'
+          node-version: "20.x"
       - run: npm install
       - run: npm build
 
@@ -25,11 +25,7 @@ jobs:
         with:
           branch: gh-pages
           pubilsh_dir: ./dist
-          github_token: ${{secrets.cicd}}
+          github_token: ${{secrets.CICD}}
           user_name: ${{secrets.MY_USER_NAME}}
           user_email: ${{secrets.MY_USER_EMAIL}}
           commit_message: 自动部署
-          
-      
-
-
