@@ -1,0 +1,35 @@
+# action名称
+name: Publish and Release
+
+# 当代码合并到master分支的时候，执行下列脚本
+on:
+  push:
+    branches: [main]
+# 任务
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: 设置Node.js
+        uses: actions/setup-node@master
+        with:
+          node-version: '20.x'
+      - run: npm install
+      - run: npm build
+
+      - name: Deploy
+        uses: pearceiris/actions-gh-pages@v3
+        with:
+          branch: gh-pages
+          pubilsh_dir: ./dist
+          github_token: ${{secrets.cicd}}
+          user_name: ${{secrets.MY_USER_NAME}}
+          user_email: ${{secrets.MY_USER_EMAIL}}
+          commit_message: 自动部署
+          
+      
+
+
