@@ -5,7 +5,7 @@ export const randomValue = Mock.mock({
     // 生成5到10个外层数组
     [
       {
-        "table|6-8": [
+        "table|6": [
           // 每个内层数组包含1到3个table
           {
             course: "@ctitle(3, 5)",
@@ -21,7 +21,7 @@ export const randomValue = Mock.mock({
             time: '@datetime("yyyy-MM-dd")',
           },
         ],
-        "comments|4-6": [
+        "comments|4": [
           // 每个table对应1到2个评论
           {
             date: '@datetime("yyyy-MM-dd")',

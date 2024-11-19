@@ -5,16 +5,9 @@ jspdf
 fileSave -->
 
 <template>
-  <div>
-    <el-button type="primary">Primary</el-button>
-    <table v-if="false" style="width: 70%">
-      <tr>
-        <td style="min-width: 79px" v-for="ite in heads" :key="ite.id">
-          {{ ite.prop }}
-        </td>
-      </tr>
-    </table>
-    <div v-if="true" class="pdf_content">
+  <div class="contents">
+    <el-button type="primary" @click="shows = !shows">Primary</el-button>
+    <div  class="pdf_content">
       <div class="pdf_item">
         <div class="item_l">
           <div v-for="(items, i) in list" :key="i">
@@ -47,12 +40,53 @@ fileSave -->
         <div class="item_r">2</div>
       </div>
     </div>
+    <div  class="pdf_content">
+      <div
+        v-for="(item, index) in newList"
+        :key="index"
+        class="pdf_item"
+        style="height: 1122px"
+      >
+        <div class="item_l">
+          <div v-for="(items, i) in item" :key="i">
+            <el-table
+            v-if="items.table.length"
+              :data="items.table"
+              style="width: 100%"
+              size="small"
+              border
+            >
+              <el-table-column
+                v-for="item in heads"
+                :label="item.prop"
+                :prop="item.name"
+                :key="item.id"
+              />
+            </el-table>
+
+            <div v-for="(it, i) in items.comments" :key="i" class="comment">
+              <div class="comment_list">
+                <div class="comment_head">
+                  <span class="comment_time">{{ it.teacher }}</span> |
+                  <span class="comment_name">{{ it.date }}</span>
+                </div>
+                <div class="comment_value">
+                  <div v-for="lin in it.content">{{ lin }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item_r">2</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { randomValue } from "../mock/index.js";
 import { ref, onMounted } from "vue";
+const shows = ref(true);
 
 const list = ref([]);
 const heads = ref([
@@ -97,9 +131,12 @@ const computedTrHeight = () => {
   let MAX_HEIGHT = 1112;
   let PAGE = 0;
   let CURRENT = 0;
+  let isChangePage = true;
+  console.log(H_JSON(list.value), "LIST");
 
   list.value.forEach((item) => {
     item.forEach((ite) => {
+      isChangePage = true;
       // 先计算表头，实际表头是动态的，但是这里做了静态处理
       const TH_HEIGHT = createVNodeTh(heads.value);
       MAX_HEIGHT -= TH_HEIGHT;
@@ -108,6 +145,7 @@ const computedTrHeight = () => {
         MAX_HEIGHT = 1112;
         CURRENT = 0;
         PAGE++;
+        isChangePage = false;
         newList.value[PAGE] = [{ table: [], comments: [] }];
       }
       ite.table.forEach((td) => {
@@ -118,17 +156,15 @@ const computedTrHeight = () => {
           MAX_HEIGHT = 1112;
           CURRENT = 0;
           PAGE++;
-          newList.value[PAGE] = [[{ table: [], comments: [] }]];
+          isChangePage = false;
+          newList.value[PAGE] = [{ table: [], comments: [] }];
         } else {
-          console.log(
-            H_JSON(newList.value),
-            PAGE,
-            H_JSON(newList.value[PAGE]),
-            "PAGE"
-          );
+          isChangePage = true;
           newList.value[PAGE][CURRENT].table.push(td);
         }
       });
+
+      // 计算评论
       ite.comments.forEach((com) => {
         // 先减去padding-top
         MAX_HEIGHT -= 13;
@@ -136,55 +172,74 @@ const computedTrHeight = () => {
           MAX_HEIGHT = 1112;
           CURRENT = 0;
           PAGE++;
+          isChangePage = false;
           newList.value[PAGE] = [[{ table: [], comments: [] }]];
         } else {
+          isChangePage = true;
           // 减去标题宽度
           MAX_HEIGHT -= 23;
           if (MAX_HEIGHT < 0) {
             MAX_HEIGHT = 1112;
             CURRENT = 0;
             PAGE++;
-            newList.value[PAGE] = [[{ table: [], comments: [] }]];
+            isChangePage = false;
+            newList.value[PAGE] = [{ table: [], comments: [] }];
           } else {
-            // const COMMENTS_HEIGHT = createVNodeComments(com);
-            // MAX_HEIGHT -= COMMENTS_HEIGHT;
+            isChangePage = true;
+
             const line = calculateLines(com.content);
-            console.log(line, "line");
-            const COMMENTS = [];
             line.forEach((lin, index) => {
-              MAX_HEIGHT -= lin * 15.2;
+              MAX_HEIGHT -= 15.2;
               if (MAX_HEIGHT < 0) {
                 MAX_HEIGHT = 1112;
                 CURRENT = 0;
                 PAGE++;
+                isChangePage = false;
                 let coms = com;
                 coms.content = line.slice(index);
-                newList.value[PAGE] = [[{ table: [], comments: [coms] }]];
+                console.log(PAGE, CURRENT, index, "lllll");
+                console.log(newList.value[PAGE], "lllll2222");
+
+                newList.value[PAGE][CURRENT].comments[index] = coms;
               } else {
-                COMMENTS.push(lin);
+                console.log(
+                  newList.value[PAGE][CURRENT].comments,
+                  index,
+                  "kkkkk"
+                );
+                if (!newList.value[PAGE][CURRENT].comments[index]) {
+                  newList.value[PAGE][CURRENT].comments[index] = {};
+                  newList.value[PAGE][CURRENT].comments[index]["content"] = [];
+                }
+                newList.value[PAGE][CURRENT].comments[index]["data"] = com.data;
+                newList.value[PAGE][CURRENT].comments[index]["teacher"] =
+                  com.teacher;
+                newList.value[PAGE][CURRENT].comments[index]["content"].push(
+                  lin
+                );
               }
             });
+
+            MAX_HEIGHT -= 13;
+
             // 需要分页到下一页
             if (MAX_HEIGHT < 0) {
               MAX_HEIGHT = 1112;
               CURRENT = 0;
               PAGE++;
-              newList.value[PAGE] = [[{ table: [], comments: [] }]];
-            } else {
-              newList.value[PAGE][CURRENT].comments.push(com);
-              MAX_HEIGHT -= 13;
+              newList.value[PAGE] = [{ table: [], comments: [] }];
             }
           }
         }
       });
     });
-    if (!PAGE) {
+    if (isChangePage) {
       CURRENT++;
-      console.log(H_JSON(newList.value[PAGE]), PAGE, CURRENT, "sssd");
-
       newList.value[PAGE][CURRENT] = { table: [], comments: [] };
     }
   });
+
+  console.log(H_JSON(newList.value), "newList");
 };
 
 //  创建虚拟dom
@@ -317,11 +372,18 @@ const H_JSON = (val) => {
 </script>
 
 <style lang="scss" scoped>
+.contents{
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+
+}
 .td_hyy {
   z-index: 9999;
   width: 900px;
 }
 .pdf_content {
+  margin-right: 40px;
   width: 793px;
   .pdf_item {
     width: 100%;
