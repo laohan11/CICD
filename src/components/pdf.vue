@@ -6,74 +6,82 @@ fileSave -->
 
 <template>
   <div class="contents">
-    <el-button type="primary" @click="shows = !shows">Primary</el-button>
-    <div  class="pdf_content">
+    <div class="pdf_content">
       <div class="pdf_item">
         <div class="item_l">
-          <div v-for="(items, i) in list" :key="i">
-            <el-table
-              v-for="(ite, i) in items"
-              :key="i"
-              :data="ite.table"
-              style="width: 100%"
-              size="small"
-              border
-            >
-              <el-table-column
-                v-for="item in heads"
-                :label="item.prop"
-                :prop="item.name"
-                :key="item.id"
-              />
-            </el-table>
-            <div v-for="(ite, i) in items" :key="i" class="comment">
-              <div v-for="it in ite.comments" :key="i" class="comment_list">
-                <div class="comment_head">
-                  <span class="comment_time">{{ it.teacher }}</span> |
-                  <span class="comment_name">{{ it.date }}</span>
-                </div>
-                <div class="comment_value">{{ it.content }}</div>
+          <div v-for="(items, i) in randomValue.data" :key="i">
+            <template v-if="false">
+              <el-table
+                v-for="(ite, i) in items"
+                :key="i"
+                :data="ite.table"
+                style="width: 100%"
+                size="small"
+                border
+              >
+                <el-table-column
+                  v-for="item in heads"
+                  :label="item.prop"
+                  :prop="item.name"
+                  :key="item.id"
+                />
+              </el-table>
+            </template>
+            <template v-if="true">
+              <div v-for="(ite, i) in items" :key="i" class="comment">
+                <template v-for="it in ite.comments">
+                  <div v-if="it" class="comment_list">
+                    <div v-if="it.teacher" class="comment_head">
+                      <span class="comment_time">{{ it.teacher }}</span> |
+                      <span class="comment_name">{{ it.date }}</span>
+                    </div>
+                    <div class="comment_value">{{ it.content }}</div>
+                  </div>
+                </template>
               </div>
-            </div>
+            </template>
           </div>
         </div>
         <div class="item_r">2</div>
       </div>
     </div>
-    <div  class="pdf_content">
+    <div class="pdf_content">
       <div
         v-for="(item, index) in newList"
         :key="index"
         class="pdf_item"
-        style="height: 1122px"
+        style="height: 1112px"
       >
         <div class="item_l">
           <div v-for="(items, i) in item" :key="i">
-            <el-table
-            v-if="items.table.length"
-              :data="items.table"
-              style="width: 100%"
-              size="small"
-              border
-            >
-              <el-table-column
-                v-for="item in heads"
-                :label="item.prop"
-                :prop="item.name"
-                :key="item.id"
-              />
-            </el-table>
-
-            <div v-for="(it, i) in items.comments" :key="i" class="comment">
-              <div class="comment_list">
-                <div class="comment_head">
-                  <span class="comment_time">{{ it.teacher }}</span> |
-                  <span class="comment_name">{{ it.date }}</span>
+            <template v-if="false">
+              <el-table
+                v-if="items.table.length"
+                :data="items.table"
+                style="width: 100%"
+                size="small"
+                border
+              >
+                <el-table-column
+                  v-for="item in heads"
+                  :label="item.prop"
+                  :prop="item.name"
+                  :key="item.id"
+                />
+              </el-table>
+            </template>
+            <div class="comment">
+              <template v-for="(it, i) in items.comments" :key="i">
+                <div v-if="it" class="comment_list">
+                  <div v-if="it.teacher" class="comment_head">
+                    <span class="comment_time">{{ it?.teacher }}</span> |
+                    <span class="comment_name">{{ it?.data }}</span>
+                  </div>
+                  <div class="comment_value">
+                    <div v-for="lin in it?.content">{{ lin }}</div>
+                  </div>
                 </div>
-                <div class="comment_value">
-                  <div v-for="lin in it.content">{{ lin }}</div>
-                </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -124,21 +132,239 @@ onMounted(() => {
  * 2、目前的难点：如何计算表格每一行实际的高度
  * 3、解决方案;先穿件虚拟dom让字符串按照对应的格式渲染出来，然后渲染这段字符串，再获取这段字符串渲染出来的高度
  */
+
+const MAX_HEIGHT = ref(1112);
+const PAGE = ref(0);
+const CURRENT = ref(0);
+const KEYS = ref(0);
+const TOTAL_HEIGHT = ref(0);
+
+const Have_ADD = ref(false);
+const SHOULD_NEXT = ref(true);
+
 const newList = ref([[{ table: [], comments: [] }]]);
 
 const computedTrHeight = () => {
+  list.value.forEach((item, index) => {
+    // 先计算table
+
+    item.forEach((ite) => {
+      // 再减去表格项目前，需要先减去表头高度
+      SHOULD_NEXT.value = true;
+      // computedTable(ite, index);
+      ite.comments.length > 0 &&
+        SHOULD_NEXT.value &&
+        computedComment(ite, index);
+      // 计算评论
+    });
+    if (Have_ADD.value) {
+      CURRENT.value = 0;
+    } else {
+      CURRENT.value++;
+      // console.log(
+      //   H_JSON(newList.value[PAGE.value][CURRENT.value]),
+      //   H_JSON(PAGE.value),
+      //   H_JSON(CURRENT.value),
+      //   "lllll"
+      // );
+
+      newList.value[PAGE.value][CURRENT.value] = {
+        table: [],
+        comments: [],
+      };
+    }
+  });
+  console.log(H_JSON(newList.value), "jjj");
+};
+
+const computedTable = (ite, index) => {
+  // const TH_HEIGHT = createVNodeTh(heads.value);
+  //     console.log(TH_HEIGHT, "TH_HEIGHT");
+  MAX_HEIGHT.value -= 55;
+  MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value);
+  for (let i = 0; i < ite.table.length; i++) {
+    const td = H_JSON(ite.table[i]);
+    // 减去每一项table的高度
+    const res = createVNodeTd(td);
+
+    MAX_HEIGHT.value -= res;
+    MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value);
+    // console.log(H_JSON(MAX_HEIGHT.value), res, H_JSON(td), "高度");
+
+    if (MAX_HEIGHT.value < 0) {
+      PAGE.value++;
+      CURRENT.value = 0;
+      MAX_HEIGHT.value = 1112;
+      Have_ADD.value = true;
+      // 组建新的值从新插入到newList中用于下一轮循环
+      // console.log(H_JSON(ite.table), td, i, index, "td");
+
+      const table = ite.table.slice(i);
+      const comments = H_JSON(ite.comments);
+      const newItem = [{ table, comments }];
+      // console.log(newItem, "newItem");
+      newList.value[PAGE.value] = [{ table: [], comments: [] }];
+      newList.value[PAGE.value][CURRENT.value].table.push(td);
+      // list.value.splice(index + 1, 0, newItem);
+      SHOULD_NEXT.value = false;
+    } else {
+      Have_ADD.value = false;
+      SHOULD_NEXT.value = true;
+      newList.value[PAGE.value][CURRENT.value].table.push(td);
+    }
+  }
+};
+const computedComment = (ite, index) => {
+  for (let i = 0; i < ite.comments.length; i++) {
+    const item = ite.comments[i];
+    KEYS.value++;
+    // 先减去padding-top
+    // MAX_HEIGHT.value -= 13;
+    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+    TOTAL_HEIGHT.value += 13;
+    console.log("还剩多少1", H_JSON(MAX_HEIGHT.value));
+
+    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      totalFunc();
+      KEYS.value = 0;
+
+      console.log(H_JSON(newList.value), "减去pt");
+    }
+
+    // 再减去评论标题
+    // MAX_HEIGHT.value -= 18.5;
+    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+    TOTAL_HEIGHT.value += 19;
+    console.log("还剩多少2", H_JSON(MAX_HEIGHT.value));
+
+    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      totalFunc();
+      KEYS.value = 0;
+    } else {
+      if (!newList.value[PAGE.value][CURRENT.value]) {
+        newList.value[PAGE.value][CURRENT.value] = { table: [], comments: [] };
+      }
+      if (!newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]) {
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value] = {};
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+          "content"
+        ] = [];
+      }
+      newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]["data"] =
+        item.date;
+      newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]["teacher"] =
+        item.teacher;
+      console.log(H_JSON(newList.value), "再减去评论标题", i);
+    }
+
+    // 减去评论标题的margin-bottom
+    // MAX_HEIGHT.value -= 5;
+    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+    TOTAL_HEIGHT.value += 5;
+    console.log("还剩多少3", H_JSON(MAX_HEIGHT.value));
+
+    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      totalFunc();
+      KEYS.value = 0;
+
+      // if (!newList.value[PAGE.value][CURRENT.value].comments[i]) {
+      //   newList.value[PAGE.value][CURRENT.value].comments[i] = {};
+      //   newList.value[PAGE.value][CURRENT.value].comments[i]["content"] =
+      //     [];
+      // }
+      // newList.value[PAGE.value][CURRENT.value].comments[i]["data"] = ""
+
+      // newList.value[PAGE.value][CURRENT.value].comments[i]["teacher"] = ""
+      console.log(H_JSON(newList.value), "减去评论标题的margin-bottom", i);
+    }
+
+    // 开始裁剪评论内容
+    const line = calculateLines(item.content);
+    for (let k = 0; k < line.length; k++) {
+      const ln = line[k];
+
+      // MAX_HEIGHT.value -= 15.3;
+      // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+      TOTAL_HEIGHT.value += 16;
+      console.log("还剩多少4", H_JSON(MAX_HEIGHT.value));
+
+      console.log(
+        H_JSON(MAX_HEIGHT.value),
+        H_JSON(newList.value),
+        ln,
+        k,
+        i,
+        "MAX_HEIGHT"
+      );
+
+      if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+        totalFunc();
+        KEYS.value = 0;
+
+        if (!newList.value[PAGE.value][CURRENT.value]) {
+          newList.value[PAGE.value][CURRENT.value] = {
+            table: [],
+            comments: [],
+          };
+        }
+        if (!newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]) {
+          newList.value[PAGE.value][CURRENT.value].comments[KEYS.value] = {};
+          newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+            "content"
+          ] = [];
+        }
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+          "content"
+        ].push(ln);
+        console.log(H_JSON(newList.value), "减去l1");
+      } else {
+        if (!newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]) {
+          newList.value[PAGE.value][CURRENT.value].comments[KEYS.value] = {};
+          newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+            "content"
+          ] = [];
+        }
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+          "content"
+        ].push(ln);
+        console.log(H_JSON(newList.value), "减去l2");
+      }
+    }
+    // MAX_HEIGHT.value -= 16;
+    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+    TOTAL_HEIGHT.value += 13;
+    console.log("还剩多少5", H_JSON(MAX_HEIGHT.value));
+
+    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      totalFunc();
+      KEYS.value = 0;
+    }
+  }
+};
+
+// 抽离公用函数
+const totalFunc = () => {
+  PAGE.value++;
+
+  CURRENT.value = 0;
+  // MAX_HEIGHT.value = 1112;
+  TOTAL_HEIGHT.value = 0;
+  Have_ADD.value = true;
+  newList.value[PAGE.value] = [{ table: [], comments: [] }];
+};
+
+const computedTrHeights = () => {
   // 计算表头高度
+  // 原本高度该为1112，但是中途计算有问题，导致计算会多50-60px，所以就在总长度这里加了一个错误范围
   let MAX_HEIGHT = 1112;
   let PAGE = 0;
   let CURRENT = 0;
   let isChangePage = true;
-  console.log(H_JSON(list.value), "LIST");
-
   list.value.forEach((item) => {
     item.forEach((ite) => {
       isChangePage = true;
       // 先计算表头，实际表头是动态的，但是这里做了静态处理
-      const TH_HEIGHT = createVNodeTh(heads.value);
+      // const TH_HEIGHT = createVNodeTh(heads.value);
       MAX_HEIGHT -= TH_HEIGHT;
       // 需要分页到下一页
       if (MAX_HEIGHT < 0) {
@@ -165,7 +391,7 @@ const computedTrHeight = () => {
       });
 
       // 计算评论
-      ite.comments.forEach((com) => {
+      ite.comments.forEach((com, index) => {
         // 先减去padding-top
         MAX_HEIGHT -= 13;
         if (MAX_HEIGHT < 0) {
@@ -177,41 +403,62 @@ const computedTrHeight = () => {
         } else {
           isChangePage = true;
           // 减去标题宽度
-          MAX_HEIGHT -= 23;
+          MAX_HEIGHT -= 18;
           if (MAX_HEIGHT < 0) {
             MAX_HEIGHT = 1112;
             CURRENT = 0;
             PAGE++;
             isChangePage = false;
             newList.value[PAGE] = [{ table: [], comments: [] }];
+            console.log("减去标题宽度");
           } else {
+            if (!newList.value[PAGE][CURRENT].comments[index]) {
+              newList.value[PAGE][CURRENT].comments[index] = {};
+              newList.value[PAGE][CURRENT].comments[index]["content"] = [];
+            }
+            newList.value[PAGE][CURRENT].comments[index]["data"] = com.date;
+            newList.value[PAGE][CURRENT].comments[index]["teacher"] =
+              com.teacher;
+            MAX_HEIGHT -= 5;
+            if (MAX_HEIGHT < 0) {
+              MAX_HEIGHT = 1112;
+              CURRENT = 0;
+              PAGE++;
+              isChangePage = false;
+              newList.value[PAGE] = [{ table: [], comments: [] }];
+              console.log("减去标题宽度2");
+            }
             isChangePage = true;
-
             const line = calculateLines(com.content);
-            line.forEach((lin, index) => {
+            console.log(line, "line");
+            console.log(MAX_HEIGHT, "MAX_HEIGHT1");
+
+            line.forEach((lin, i) => {
               MAX_HEIGHT -= 15.2;
+              console.log(MAX_HEIGHT, i, "MAX_HEIGHT2");
+
               if (MAX_HEIGHT < 0) {
                 MAX_HEIGHT = 1112;
                 CURRENT = 0;
                 PAGE++;
                 isChangePage = false;
                 let coms = com;
-                coms.content = line.slice(index);
-                console.log(PAGE, CURRENT, index, "lllll");
-                console.log(newList.value[PAGE], "lllll2222");
-
+                coms.content = line.slice(i);
+                // console.log(coms, "coms");
+                console.log(H_JSON(newList.value), PAGE, CURRENT, "coms");
+                if (!newList.value[PAGE]) {
+                  newList.value[PAGE] = [[{ table: [], comments: [] }]];
+                }
                 newList.value[PAGE][CURRENT].comments[index] = coms;
               } else {
-                console.log(
-                  newList.value[PAGE][CURRENT].comments,
-                  index,
-                  "kkkkk"
-                );
+                console.log(MAX_HEIGHT, "MAX_HEIGHT3");
+                console.log(lin, "lin");
+
                 if (!newList.value[PAGE][CURRENT].comments[index]) {
                   newList.value[PAGE][CURRENT].comments[index] = {};
                   newList.value[PAGE][CURRENT].comments[index]["content"] = [];
                 }
-                newList.value[PAGE][CURRENT].comments[index]["data"] = com.data;
+                newList.value[PAGE][CURRENT].comments[index]["data"] = com.date;
                 newList.value[PAGE][CURRENT].comments[index]["teacher"] =
                   com.teacher;
                 newList.value[PAGE][CURRENT].comments[index]["content"].push(
@@ -221,7 +468,6 @@ const computedTrHeight = () => {
             });
 
             MAX_HEIGHT -= 13;
-
             // 需要分页到下一页
             if (MAX_HEIGHT < 0) {
               MAX_HEIGHT = 1112;
@@ -238,7 +484,6 @@ const computedTrHeight = () => {
       newList.value[PAGE][CURRENT] = { table: [], comments: [] };
     }
   });
-
   console.log(H_JSON(newList.value), "newList");
 };
 
@@ -247,12 +492,12 @@ const createVNodeTd = (td) => {
   const tdList = [];
   for (const key in td) {
     const item = td[key];
-    const tds = `<td style="min-width: 79px">${item}</td>`;
+    const tds = `<td style="width: 79px;line-height: 23px;padding: 4px 8px;box-sizing: border-box;font-size: 12px;">${item}</td>`;
     tdList.push(tds);
   }
   const nodes = `
     <table style="width: 555.1px;border-collapse: collapse;">
-      <tr style="min-width: 79px" >
+      <tr style="width: 79px" >
         ${tdList.join("")}
       </tr>
     </table>
@@ -269,18 +514,18 @@ const createVNodeTd = (td) => {
   document.body.appendChild(tableElement);
   const el = document.querySelector(".td_hyy");
   const h = el.offsetHeight;
-  el.remove();
+  // el.remove();
   return h;
 };
 const createVNodeTh = (th) => {
   const tdList = [];
   th.forEach((ite) => {
-    const ths = `<th style="min-width: 79px">${ite.prop}</th>`;
+    const ths = `<th style="max-width: 79px">${ite.prop}</th>`;
     tdList.push(ths);
   });
   const nodes = `
     <table style="width: 555.1px;border-collapse: collapse;">
-      <tr style="min-width: 79px" >
+      <tr style="max-width: 79px" >
         ${tdList.join("")}
       </tr>
     </table>
@@ -299,20 +544,6 @@ const createVNodeTh = (th) => {
   const h = el.offsetHeight;
   el.remove();
   return h;
-};
-const createVNodeComments = (com) => {
-  const nodes = `<div class="comment_lists"><div class="comment_values" style="width:521px">${com.content}</div></div>`;
-  console.log(nodes, "hyy");
-
-  // 创建一个临时的 div 元素
-  const tempDiv = document.createElement("div");
-  // 设置 innerHTML
-  tempDiv.innerHTML = nodes;
-  document.body.appendChild(tempDiv);
-  const el = document.querySelector(".comment_values");
-  console.log(el, "hyy");
-  const rects = el.getClientRects();
-  console.log(rects, "hyy");
 };
 // 计算行数
 const calculateLines = (
@@ -372,16 +603,21 @@ const H_JSON = (val) => {
 </script>
 
 <style lang="scss" scoped>
-.contents{
+.contents {
   width: 100%;
   display: flex;
   align-items: flex-start;
-
 }
-.td_hyy {
-  z-index: 9999;
-  width: 900px;
-}
+// .td_hyy {
+//   z-index: 9999;
+//   width: 900px;
+//   td{
+//    line-height: 23px;
+//     padding: 4px 0;
+//     box-sizing: border-box;
+//     font-size: 12px;
+//   }
+// }
 .pdf_content {
   margin-right: 40px;
   width: 793px;
@@ -395,12 +631,13 @@ const H_JSON = (val) => {
     display: flex;
     align-items: center;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .item_l {
     width: 70%;
     height: 100%;
     .comment {
-      margin: 5px 0 15px;
+      // margin: 5px 0 15px;
       width: 100%;
       border-radius: 8px;
       background: #f9fbfe;
