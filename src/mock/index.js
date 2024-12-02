@@ -8,7 +8,7 @@ export const randomValue = Mock.mock({
         "table|8-15": [
           // 每个内层数组包含1到3个table
           {
-            course: "@ctitle(5,9)",
+            course: "@ctitle(3,16)",
             // grade: "@integer(1, 100)",
             gpa: "@float(0, 4, 1, 2)",
             credit: "@float(0.5, 5, 1, 1)",
