@@ -10,7 +10,7 @@ fileSave -->
       <div class="pdf_item">
         <div class="item_l">
           <div v-for="(items, i) in randomValue.data" :key="i">
-            <template v-if="false">
+            <template v-if="true">
               <el-table
                 v-for="(ite, i) in items"
                 :key="i"
@@ -27,7 +27,7 @@ fileSave -->
                 />
               </el-table>
             </template>
-            <template v-if="true">
+            <template v-if="false">
               <div v-for="(ite, i) in items" :key="i" class="comment">
                 <template v-for="it in ite.comments">
                   <div v-if="it" class="comment_list">
@@ -50,11 +50,11 @@ fileSave -->
         v-for="(item, index) in newList"
         :key="index"
         class="pdf_item"
-        style="height: 1112px"
+        style="height: 1115px"
       >
         <div class="item_l">
           <div v-for="(items, i) in item" :key="i">
-            <template v-if="false">
+            <template v-if="true">
               <el-table
                 v-if="items.table.length"
                 :data="items.table"
@@ -70,7 +70,7 @@ fileSave -->
                 />
               </el-table>
             </template>
-            <div class="comment">
+            <div class="comment" v-if="false">
               <template v-for="(it, i) in items.comments" :key="i">
                 <div v-if="it" class="comment_list">
                   <div v-if="it.teacher" class="comment_head">
@@ -151,10 +151,10 @@ const computedTrHeight = () => {
     item.forEach((ite) => {
       // 再减去表格项目前，需要先减去表头高度
       SHOULD_NEXT.value = true;
-      // computedTable(ite, index);
-      ite.comments.length > 0 &&
-        SHOULD_NEXT.value &&
-        computedComment(ite, index);
+      computedTable(ite, index);
+      // ite.comments.length > 0 &&
+      //   SHOULD_NEXT.value &&
+      //   computedComment(ite, index);
       // 计算评论
     });
     if (Have_ADD.value) {
@@ -178,34 +178,42 @@ const computedTrHeight = () => {
 };
 
 const computedTable = (ite, index) => {
-  // const TH_HEIGHT = createVNodeTh(heads.value);
-  //     console.log(TH_HEIGHT, "TH_HEIGHT");
-  MAX_HEIGHT.value -= 55;
-  MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value);
+
+  TOTAL_HEIGHT.value += 55
+  if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      PAGE.value++;
+      CURRENT.value = 0;
+      TOTAL_HEIGHT.value = 0
+      MAX_HEIGHT.value = 1112;
+      Have_ADD.value = true;
+      // 组建新的值从新插入到newList中用于下一轮循环
+      const table = ite.table.slice(i);
+      const comments = H_JSON(ite.comments);
+      const newItem = [{ table, comments }];
+      newList.value[PAGE.value] = [{ table: [], comments: [] }];
+      // newList.value[PAGE.value][CURRENT.value].table.push(td);
+      // SHOULD_NEXT.value = false;
+    }
+
   for (let i = 0; i < ite.table.length; i++) {
     const td = H_JSON(ite.table[i]);
     // 减去每一项table的高度
     const res = createVNodeTd(td);
+    TOTAL_HEIGHT.value += res
+    console.log(H_JSON(TOTAL_HEIGHT.value),td,i,'jjjjj');
 
-    MAX_HEIGHT.value -= res;
-    MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value);
-    // console.log(H_JSON(MAX_HEIGHT.value), res, H_JSON(td), "高度");
-
-    if (MAX_HEIGHT.value < 0) {
+    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
       PAGE.value++;
       CURRENT.value = 0;
+      TOTAL_HEIGHT.value = 0
       MAX_HEIGHT.value = 1112;
       Have_ADD.value = true;
       // 组建新的值从新插入到newList中用于下一轮循环
-      // console.log(H_JSON(ite.table), td, i, index, "td");
-
       const table = ite.table.slice(i);
       const comments = H_JSON(ite.comments);
       const newItem = [{ table, comments }];
-      // console.log(newItem, "newItem");
       newList.value[PAGE.value] = [{ table: [], comments: [] }];
       newList.value[PAGE.value][CURRENT.value].table.push(td);
-      // list.value.splice(index + 1, 0, newItem);
       SHOULD_NEXT.value = false;
     } else {
       Have_ADD.value = false;
@@ -219,28 +227,36 @@ const computedComment = (ite, index) => {
     const item = ite.comments[i];
     KEYS.value++;
     // 先减去padding-top
-    // MAX_HEIGHT.value -= 13;
-    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
     TOTAL_HEIGHT.value += 13;
-    console.log("还剩多少1", H_JSON(MAX_HEIGHT.value));
-
+    console.log("还剩多少1", H_JSON(TOTAL_HEIGHT.value));
     if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
       totalFunc();
+      TOTAL_HEIGHT.value += 13;
       KEYS.value = 0;
-
-      console.log(H_JSON(newList.value), "减去pt");
     }
 
     // 再减去评论标题
-    // MAX_HEIGHT.value -= 18.5;
-    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
     TOTAL_HEIGHT.value += 19;
-    console.log("还剩多少2", H_JSON(MAX_HEIGHT.value));
-
-    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+    console.log("还剩多少2", H_JSON(TOTAL_HEIGHT.value),item.teacher);
+    if ((TOTAL_HEIGHT.value + 13) > MAX_HEIGHT.value) {
       totalFunc();
+      TOTAL_HEIGHT.value+=32
       KEYS.value = 0;
-    } else {
+      if (!newList.value[PAGE.value][CURRENT.value]) {
+        newList.value[PAGE.value][CURRENT.value] = { table: [], comments: [] };
+      }
+      if (!newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]) {
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value] = {};
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
+          "content"
+        ] = [];
+      }
+      newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]["data"] =
+        item.date;
+      newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]["teacher"] =
+        item.teacher;
+    } 
+
       if (!newList.value[PAGE.value][CURRENT.value]) {
         newList.value[PAGE.value][CURRENT.value] = { table: [], comments: [] };
       }
@@ -255,52 +271,30 @@ const computedComment = (ite, index) => {
       newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]["teacher"] =
         item.teacher;
       console.log(H_JSON(newList.value), "再减去评论标题", i);
-    }
-
+      
     // 减去评论标题的margin-bottom
-    // MAX_HEIGHT.value -= 5;
-    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
     TOTAL_HEIGHT.value += 5;
-    console.log("还剩多少3", H_JSON(MAX_HEIGHT.value));
-
-    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+    console.log("还剩多少3", H_JSON(TOTAL_HEIGHT.value));
+    if ((TOTAL_HEIGHT.value + 8) > MAX_HEIGHT.value) {
       totalFunc();
+      TOTAL_HEIGHT.value+=13
       KEYS.value = 0;
-
-      // if (!newList.value[PAGE.value][CURRENT.value].comments[i]) {
-      //   newList.value[PAGE.value][CURRENT.value].comments[i] = {};
-      //   newList.value[PAGE.value][CURRENT.value].comments[i]["content"] =
-      //     [];
-      // }
-      // newList.value[PAGE.value][CURRENT.value].comments[i]["data"] = ""
-
-      // newList.value[PAGE.value][CURRENT.value].comments[i]["teacher"] = ""
-      console.log(H_JSON(newList.value), "减去评论标题的margin-bottom", i);
     }
-
-    // 开始裁剪评论内容
-    const line = calculateLines(item.content);
+   // 开始裁剪评论内容
+   const line = calculateLines(item.content);
     for (let k = 0; k < line.length; k++) {
+      if(k == line.length-1){
+        TOTAL_HEIGHT.value += 1;
+        console.log('jjjjjj');
+        
+      }
       const ln = line[k];
-
-      // MAX_HEIGHT.value -= 15.3;
-      // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
       TOTAL_HEIGHT.value += 16;
-      console.log("还剩多少4", H_JSON(MAX_HEIGHT.value));
-
-      console.log(
-        H_JSON(MAX_HEIGHT.value),
-        H_JSON(newList.value),
-        ln,
-        k,
-        i,
-        "MAX_HEIGHT"
-      );
-
-      if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+      console.log("还剩多少4", H_JSON(TOTAL_HEIGHT.value),H_JSON(newList.value),ln);
+      if ((TOTAL_HEIGHT.value + 13) > MAX_HEIGHT.value) {
         totalFunc();
+        TOTAL_HEIGHT.value+= 29
         KEYS.value = 0;
-
         if (!newList.value[PAGE.value][CURRENT.value]) {
           newList.value[PAGE.value][CURRENT.value] = {
             table: [],
@@ -313,10 +307,7 @@ const computedComment = (ite, index) => {
             "content"
           ] = [];
         }
-        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][
-          "content"
-        ].push(ln);
-        console.log(H_JSON(newList.value), "减去l1");
+        newList.value[PAGE.value][CURRENT.value].comments[KEYS.value][ "content"].push(ln);
       } else {
         if (!newList.value[PAGE.value][CURRENT.value].comments[KEYS.value]) {
           newList.value[PAGE.value][CURRENT.value].comments[KEYS.value] = {};
@@ -330,13 +321,15 @@ const computedComment = (ite, index) => {
         console.log(H_JSON(newList.value), "减去l2");
       }
     }
-    // MAX_HEIGHT.value -= 16;
-    // MAX_HEIGHT.value = Math.ceil(MAX_HEIGHT.value)
+    
+    
+    
+ 
     TOTAL_HEIGHT.value += 13;
-    console.log("还剩多少5", H_JSON(MAX_HEIGHT.value));
-
-    if (TOTAL_HEIGHT.value > MAX_HEIGHT.value) {
+    console.log("还剩多少5", H_JSON(TOTAL_HEIGHT.value));
+    if ((TOTAL_HEIGHT.value + 13) > MAX_HEIGHT.value) {
       totalFunc();
+      TOTAL_HEIGHT.value+=13
       KEYS.value = 0;
     }
   }
@@ -655,18 +648,21 @@ const H_JSON = (val) => {
           align-items: center;
           color: #1d2129;
           font-weight: 500;
+          line-height: 19px;
         }
         .comment_value {
           color: #333333;
           font-weight: 400;
           font-size: 12px;
           margin-top: 5px;
+          line-height: 16px;
         }
         .comment_values {
           color: #333333;
           font-weight: 400;
           font-size: 12px;
           margin-top: 5px;
+          line-height: 16px;
         }
       }
       &_list:last-child {

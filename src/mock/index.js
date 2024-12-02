@@ -1,11 +1,11 @@
 import Mock from "mockjs";
 
 export const randomValue = Mock.mock({
-  "data|5-5": [
+  "data|9-14": [
     // 生成5到10个外层数组
     [
       {
-        "table|2-4": [
+        "table|8-15": [
           // 每个内层数组包含1到3个table
           {
             course: "@ctitle(5,9)",
@@ -21,12 +21,12 @@ export const randomValue = Mock.mock({
             // time: '@datetime("yyyy-MM-dd")',
           },
         ],
-        "comments|9-16": [
+        "comments|1-2": [
           // 每个table对应1到2个评论
           {
             date: '@datetime("yyyy-MM-dd")',
             teacher: "@cname",
-            content: "@cparagraph(20, 30)",
+            content: "@cparagraph(6, 9)",
           },
         ],
       },
